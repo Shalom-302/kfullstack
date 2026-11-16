@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+/dist/
+/build/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.DS_Store
+node_modules/
+.next/
+# local secrets at repo root only (templates ship .env.template / .env.example)
+/.env
+# scratch generated projects
+/_out/

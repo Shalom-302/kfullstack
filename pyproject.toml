@@ -1,0 +1,41 @@
+[project]
+name = "kfullstack"
+version = "0.1.0"
+description = "Scaffold fullstack apps: a lean FastAPI backend (shaapi lineage) + a Next.js frontend, with WhatsApp OTP auth."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Shalom" }]
+keywords = ["fastapi", "nextjs", "fullstack", "boilerplate", "scaffold", "whatsapp", "otp", "cli"]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13",
+]
+
+[project.urls]
+Repository = "https://github.com/Shalom-302/kfullstack"
+
+[project.scripts]
+kfullstack = "kfullstack.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+# Do not let the repo .gitignore strip template files (e.g. frontend src/lib,
+# .env.example) out of the built wheel.
+ignore-vcs = true
+exclude = [
+    "**/__pycache__",
+    "**/*.pyc",
+    "**/node_modules",
+    "**/.next",
+    "**/.venv",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kfullstack"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/kfullstack", "README.md", "LICENSE"]
