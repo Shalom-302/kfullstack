@@ -11,13 +11,14 @@ from backend.core.conf import settings
 def normalize_phone(value: str) -> str:
     raw = (value or '').strip()
     digits = ''.join(ch for ch in raw if ch.isdigit())
+    cc = settings.PHONE_DEFAULT_COUNTRY_CODE.lstrip('+')
     if raw.startswith('+'):
         pass
     elif digits.startswith('00'):
         digits = digits[2:]
     elif digits.startswith('0'):
         # Local number typed without the country code.
-        cc = settings.PHONE_DEFAULT_COUNTRY_CODE.lstrip('+')
+
         if not cc:
             raise ValueError('Phone number must include the country code (e.g. +33...).')
         # Some numbering plans keep the leading 0 after the country code
