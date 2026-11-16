@@ -23,6 +23,9 @@ def normalize_phone(value: str) -> str:
         # Some numbering plans keep the leading 0 after the country code
         # (e.g. Cote d'Ivoire since 2021), most drop it (France...).
         digits = cc + (digits if settings.PHONE_KEEP_LEADING_ZERO else digits[1:])
+    elif cc and not digits.startswith(cc.lstrip('+')) and len(digits) <= 10:
+        # Short local form without a leading 0.
+        digits = cc.lstrip('+') + digits
     if not (8 <= len(digits) <= 15):
         raise ValueError('Invalid phone number (country code + number, digits only).')
     return digits

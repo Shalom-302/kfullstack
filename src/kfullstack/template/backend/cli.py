@@ -33,6 +33,11 @@ async def create_admin_phone(phone: str) -> int:
             print(f"[ok] Admin account created for +{phone}")
         else:
             await user_dao.grant_role(db, user, RoleEnum.ADMIN.value)
+            # Drop the JWT middleware's cached user so the new role applies now.
+            from backend.core.conf import settings
+            from backend.database.db_redis import redis_client
+
+            await redis_client.delete(f"{settings.JWT_USER_REDIS_PREFIX}:{user.x_id}")
             print(f"[ok] +{phone} is now an administrator")
     print("     Log in with WhatsApp from the frontend (/auth/login).")
     return 0
