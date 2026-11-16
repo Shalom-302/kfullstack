@@ -23,3 +23,7 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+
+  gowa:
+    ports:
+      - "3002:3000"  # GOWA web UI: pair the system WhatsApp number (QR code)

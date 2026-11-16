@@ -54,13 +54,12 @@ class CRUDRole(CRUDBase[Role]):
         return roles.scalars().all()
 
     async def get_list(
-        self, name: str = None, data_scope: int = None, status: int = None
+        self, name: str = None, status: int = None
     ) -> Select:
         """
         Get role list
 
         :param name:
-        :param data_scope:
         :param status:
         :return:
         """
@@ -71,8 +70,6 @@ class CRUDRole(CRUDBase[Role]):
         where_list = []
         if name:
             where_list.append(self.model.name.like(f"%{name}%"))
-        if data_scope:
-            where_list.append(self.model.data_scope == data_scope)
         if status is not None:
             where_list.append(self.model.status == status)
         if where_list:
@@ -90,6 +87,15 @@ class CRUDRole(CRUDBase[Role]):
         roles =  await self.select_model_by_column(db, name=name)
 
         return roles
+
+    async def get_or_create(self, db, name: str) -> Role:
+        """Return the role called *name*, creating it if it does not exist yet."""
+        role = await self.get_by_name(db, name)
+        if role is None:
+            role = self.model(name=name)
+            db.add(role)
+            await db.flush()
+        return role
 
     async def create(self, db, obj_in: CreateRoleParam) -> None:
         """

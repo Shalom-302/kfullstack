@@ -41,6 +41,7 @@ _DEFAULT_PAIRS = {
     "OPERA_LOG_ENCRYPT_SECRET_KEY": DEFAULT_OPERA_SECRET,
     "POSTGRES_PASSWORD": "postgres",
     "MINIO_SECRET_KEY": "minioadmin",
+    "GOWA_BASIC_PASS": "change-me",
 }
 
 # Security response headers we expect a hardened API (or its proxy) to set.

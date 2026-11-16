@@ -113,7 +113,7 @@ class AuthService:
                 user_x_id = current_user.x_id
                 email = current_user.email
 
-                if not password_verify(obj.password + current_user.salt, current_user.password):
+                if not current_user.password or not password_verify(obj.password + (current_user.salt or ''), current_user.password):
                     raise errors.AuthorizationError(msg=translator.t('auth.incorrect_credential'))
                 elif not current_user.status:
                     raise errors.AuthorizationError(msg=translator.t('auth.account_locked'))
@@ -161,7 +161,8 @@ class AuthService:
                     max_age=settings.COOKIE_REFRESH_TOKEN_EXPIRE_SECONDS,
                     expires=timezone.f_utc(refresh_token.refresh_token_expire_time),
                     httponly=True,
-                    samesite='none'
+                    samesite=settings.COOKIE_SAMESITE,
+                    secure=settings.COOKIE_SECURE or settings.ENVIRONMENT != 'dev',
                 )
                 await db.refresh(current_user)
                 data = GetLoginToken(
@@ -213,6 +214,14 @@ class AuthService:
             )
             return data
 
+
+    @staticmethod
+    async def update_me(*, request: Request, obj) -> None:
+        changes = {k: v.strip() for k, v in obj.model_dump(exclude_unset=True).items() if isinstance(v, str)}
+        if changes:
+            async with async_db_session.begin() as db:
+                await user_dao.update_model(db, request.user.id, changes)
+        await redis_client.delete(f'{settings.JWT_USER_REDIS_PREFIX}:{request.user.x_id}')
 
     @staticmethod
     async def logout(*, request: Request, response: Response) -> None:

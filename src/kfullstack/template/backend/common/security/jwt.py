@@ -1,3 +1,4 @@
+import secrets
 from datetime import timedelta
 
 from fastapi import Depends, Request
@@ -53,7 +54,8 @@ async def create_access_token(sub: str, multi_login: bool) -> AccessToken:
     expire = timezone.now() + timedelta(seconds=settings.TOKEN_EXPIRE_SECONDS)
     expire_seconds = settings.TOKEN_EXPIRE_SECONDS
 
-    to_encode = {'exp': expire, 'sub': sub}
+    # jti: two tokens issued in the same second must still differ (rotation).
+    to_encode = {'exp': expire, 'sub': sub, 'jti': secrets.token_hex(8)}
     access_token = jwt.encode(to_encode, settings.TOKEN_SECRET_KEY, settings.TOKEN_ALGORITHM)
 
     if multi_login is False:
@@ -76,7 +78,8 @@ async def create_refresh_token(sub: str, multi_login: bool) -> RefreshToken:
     expire = timezone.now() + timedelta(seconds=settings.TOKEN_REFRESH_EXPIRE_SECONDS)
     expire_seconds = settings.TOKEN_REFRESH_EXPIRE_SECONDS
 
-    to_encode = {'exp': expire, 'sub': sub}
+    # jti: two tokens issued in the same second must still differ (rotation).
+    to_encode = {'exp': expire, 'sub': sub, 'jti': secrets.token_hex(8)}
     refresh_token = jwt.encode(to_encode, settings.TOKEN_SECRET_KEY, settings.TOKEN_ALGORITHM)
 
     if multi_login is False:
@@ -197,7 +200,8 @@ def superuser_verify(request: Request) -> bool:
     :param request:
     :return:
     """
-    superuser = request.user.is_superuser
-    if not superuser or not request.user.is_staff:
+    from backend.common.security.permissions import user_is_admin
+
+    if not user_is_admin(request.user):
         raise AuthorizationError
-    return superuser
+    return True

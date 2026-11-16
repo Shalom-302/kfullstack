@@ -14,28 +14,45 @@ import argparse
 import asyncio
 
 
+async def create_admin_phone(phone: str) -> int:
+    """Grant the admin role to a WhatsApp number (account created if needed)."""
+    from backend.common.enums import Role as RoleEnum
+    from backend.crud.crud_user import user_dao
+    from backend.database.db_postgres import async_db_session
+    from backend.utils.phone import normalize_phone
+
+    try:
+        phone = normalize_phone(phone)
+    except ValueError as exc:
+        print(f"[error] {exc}")
+        return 1
+    async with async_db_session.begin() as db:
+        user = await user_dao.get_by_phone(db, phone)
+        if user is None:
+            await user_dao.add_by_phone(db, phone, role_name=RoleEnum.ADMIN.value)
+            print(f"[ok] Admin account created for +{phone}")
+        else:
+            await user_dao.grant_role(db, user, RoleEnum.ADMIN.value)
+            print(f"[ok] +{phone} is now an administrator")
+    print("     Log in with WhatsApp from the frontend (/auth/login).")
+    return 0
+
+
 async def create_admin(email: str, password: str) -> int:
     """Create an admin user (idempotent) so you can log into Swagger."""
     from backend.app.admin.schema.user import UserRegister
     from backend.common.enums import Role as RoleEnum
-    from backend.crud.crud_role import role_dao
     from backend.crud.crud_user import user_dao
     from backend.database.db_postgres import async_db_session
-    from backend.models import Role
 
     async with async_db_session() as db:
         if await user_dao.get_by_email(db, email) is not None:
             print(f"[skip] A user with email {email} already exists.")
             return 0
 
-        # user_dao.add() attaches the admin role *by name*, so make sure it
-        # exists first. The Role model has no data_scope column, so we build it
-        # directly rather than through CreateRoleParam.
-        if await role_dao.get_by_name(db, RoleEnum.ADMIN.value) is None:
-            db.add(Role(name=RoleEnum.ADMIN.value))
-            await db.flush()
-
-        await user_dao.add(db, UserRegister(email=email, password=password))
+        # Public sign-ups get the 'user' role; only this trusted command
+        # creates administrators.
+        await user_dao.add(db, UserRegister(email=email, password=password), role_name=RoleEnum.ADMIN.value)
         await db.commit()
 
     print(f"[ok] Admin user created: {email}")
@@ -66,13 +83,18 @@ def main() -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     ca = sub.add_parser("create-admin", help="Create an admin user")
-    ca.add_argument("--email", required=True, help="Admin email (login).")
-    ca.add_argument("--password", required=True, help="Admin password.")
+    ca.add_argument("--email", help="Admin email (login).")
+    ca.add_argument("--password", help="Admin password.")
+    ca.add_argument("--phone", help="Admin WhatsApp number (passwordless login).")
 
     sub.add_parser("storage-init", help="Ensure the object-storage bucket exists")
 
     args = parser.parse_args()
     if args.command == "create-admin":
+        if args.phone:
+            return asyncio.run(create_admin_phone(args.phone))
+        if not (args.email and args.password):
+            parser.error("create-admin needs --phone, or --email and --password")
         return asyncio.run(create_admin(args.email, args.password))
     if args.command == "storage-init":
         return storage_init()

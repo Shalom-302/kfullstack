@@ -4,9 +4,9 @@ import casbin_async_sqlalchemy_adapter
 from fastapi import Depends, Request
 
 from backend.models.casbin_rule import CasbinRule
-from backend.common.enums import MethodType
 from backend.common.exception.errors import AuthorizationError, TokenError
 from backend.common.security.jwt import DependsJwtAuth
+from backend.common.security.permissions import user_is_admin
 from backend.core.conf import settings
 from backend.database.db_postgres import async_engine
 
@@ -60,36 +60,24 @@ class RBAC:
         if not request.auth.scopes:
             raise TokenError
         
-        # Superuser exemption from verification
-        if request.user.is_superuser:
+        # Administrators bypass fine-grained policies.
+        if user_is_admin(request.user):
             return
-        
-        # Check role data permission scope
-        user_roles = request.user.roles
+
+        user_roles = [role for role in (request.user.roles or []) if role.status]
         if not user_roles:
             raise AuthorizationError(msg='User has no assigned roles, authorization failed')
 
         method = request.method
-        if method != MethodType.GET or method != MethodType.OPTIONS:
-            if not request.user.is_staff:
-                raise AuthorizationError(msg='This user is prohibited from performing backend management operations')
-        
-        # Data permission scope
-        data_scope = any(role.data_scope == 1 for role in user_roles)
-        if data_scope:
+        if (method, path) in settings.RBAC_CASBIN_EXCLUDE:
             return
 
-
+        # Casbin: allowed as soon as one of the user's roles is allowed.
+        enforcer = await self.enforcer()
         for role in user_roles:
-            # Casbin permission verification
-            if (method, path) in settings.RBAC_CASBIN_EXCLUDE:
+            if enforcer.enforce(role.name, path, method):
                 return
-            enforcer = await self.enforcer()
-            
-            # check if at least one of the user is allowed 
-            if enforcer.enforce(role.x_id, path, method):
-                return
-        
+
         raise AuthorizationError
 
 

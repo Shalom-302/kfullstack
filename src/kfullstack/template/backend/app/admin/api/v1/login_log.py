@@ -10,7 +10,9 @@ from backend.common.security.jwt import DependsJwtAuth
 from backend.common.security.rbac import DependsRBAC
 from backend.database.db_postgres import CurrentSession
 
-router = APIRouter(prefix="/login_log", tags=["Login log"] )
+from backend.common.security.permissions import DependsAdmin
+
+router = APIRouter(prefix="/login_log", tags=["Login log"] , dependencies=[DependsAdmin])
 
 
 @router.get(

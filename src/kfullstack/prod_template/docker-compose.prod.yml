@@ -19,6 +19,12 @@ services:
       - ENVIRONMENT=prod
     restart: always
 
+  web:
+    restart: always
+
+  gowa:
+    restart: always
+
   postgres:
     restart: always
 

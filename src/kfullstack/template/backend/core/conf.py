@@ -102,7 +102,10 @@ class Settings(BaseSettings):
     CAPTCHA_LOGIN_REDIS_PREFIX: str = 'shaapi:captcha:login'
     TOKEN_REQUEST_PATH_EXCLUDE: list[str] = [  # JWT / RBAC whitelist
         f'/admin{FASTAPI_API_V1_PATH}/auth/login',
+        f'/admin{FASTAPI_API_V1_PATH}/auth/register',
         f'/admin{FASTAPI_API_V1_PATH}/auth/token/new',
+        f'/admin{FASTAPI_API_V1_PATH}/auth/whatsapp/request-otp',
+        f'/admin{FASTAPI_API_V1_PATH}/auth/whatsapp/verify-otp',
     ]
 
     # JWT
@@ -205,7 +208,31 @@ class Settings(BaseSettings):
         'old_password',
         'new_password',
         'confirm_password',
+        'code',  # WhatsApp OTP
     ]
+
+    # ------------------------------------------------------------------ #
+    # WhatsApp OTP authentication (GOWA: go-whatsapp-web-multidevice)
+    # ------------------------------------------------------------------ #
+    # The *system* WhatsApp number is the account paired with the GOWA
+    # instance below; it only sends. User numbers are recipients and login
+    # identifiers. Give every project its own GOWA instance + credentials.
+    WHATSAPP_AUTH_ENABLED: bool = True
+    BRAND_NAME: str = 'Shaapi'  # shown in the WhatsApp message
+    GOWA_URL: str = ''  # e.g. http://gowa:3000 ; empty in dev = code is logged
+    GOWA_BASIC_USER: str = ''
+    GOWA_BASIC_PASS: str = ''
+    GOWA_TIMEOUT: int = 20
+    # Country code prepended to numbers typed in local form (leading 0).
+    # Empty = numbers must be typed in international form (+33..., 00225...).
+    PHONE_DEFAULT_COUNTRY_CODE: str = ''
+    PHONE_KEEP_LEADING_ZERO: bool = False
+    OTP_LENGTH: int = 6
+    OTP_TTL_SECONDS: int = 600
+    OTP_MAX_ATTEMPTS: int = 5
+    OTP_RESEND_COOLDOWN_SECONDS: int = 60
+    OTP_MAX_SENDS_PER_PHONE_HOUR: int = 5
+    OTP_REDIS_PREFIX: str = 'shaapi:otp'
 
     @model_validator(mode='after')
     def _enforce_production_safety(self) -> 'Settings':
@@ -235,6 +262,11 @@ class Settings(BaseSettings):
             insecure.append('POSTGRES_PASSWORD  (still the default "postgres")')
         if self.MINIO_SECRET_KEY == 'minioadmin':
             insecure.append('MINIO_SECRET_KEY  (still the default "minioadmin")')
+        if self.WHATSAPP_AUTH_ENABLED and not self.GOWA_URL:
+            insecure.append('GOWA_URL  (WhatsApp login is enabled but no GOWA instance is set; '
+                            'or set WHATSAPP_AUTH_ENABLED=false)')
+        if self.GOWA_URL and self.GOWA_BASIC_PASS in ('', 'change-me'):
+            insecure.append('GOWA_BASIC_PASS  (protect the GOWA instance with HTTP basic auth)')
 
         if insecure:
             raise ValueError(

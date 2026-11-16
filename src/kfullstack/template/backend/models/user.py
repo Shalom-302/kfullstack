@@ -17,10 +17,13 @@ class User(Base):
     x_id: Mapped[str] = mapped_column(sa.String(32), init=False, unique=True, default=get_id)
     firstname: Mapped[str] = mapped_column(sa.String, init=False, nullable=True)
     lastname: Mapped[str] = mapped_column(sa.String, init=False, index=True, nullable=True)
-    phone: Mapped[str] = mapped_column(sa.String, init=False, index=True, nullable=True) 
-    email: Mapped[str] = mapped_column(sa.String(200), index=True, unique=True, nullable=False)
-    password: Mapped[str] = mapped_column(sa.String, nullable=False)
-    salt: Mapped[str] = mapped_column(sa.String, nullable=True)
+    # Login identifiers: an account has an email (+ password) and/or a phone
+    # number (WhatsApp OTP). Phone is stored normalized (digits, country code
+    # first, no '+'), see backend.utils.phone.
+    phone: Mapped[str | None] = mapped_column(sa.String(20), init=False, index=True, unique=True, nullable=True, default=None)
+    email: Mapped[str | None] = mapped_column(sa.String(200), index=True, unique=True, nullable=True, default=None)
+    password: Mapped[str | None] = mapped_column(sa.String, nullable=True, default=None)
+    salt: Mapped[str | None] = mapped_column(sa.String, nullable=True, default=None)
     status: Mapped[bool] = mapped_column(sa.Boolean, default=True, server_default='1')  # User account status (False: deactivated, True: normal)
     is_multi_login: Mapped[bool] = mapped_column(sa.Boolean(), nullable=False, default=False, server_default='1')
     last_login_time: Mapped[datetime] = mapped_column(sa.DateTime(timezone=True), init=False, onupdate=func.now(), default=current_timestamp())

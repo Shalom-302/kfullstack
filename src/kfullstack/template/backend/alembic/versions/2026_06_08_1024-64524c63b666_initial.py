@@ -94,9 +94,9 @@ def upgrade() -> None:
     sa.Column('x_id', sa.String(length=32), nullable=False),
     sa.Column('firstname', sa.String(), nullable=True),
     sa.Column('lastname', sa.String(), nullable=True),
-    sa.Column('phone', sa.String(), nullable=True),
-    sa.Column('email', sa.String(length=200), nullable=False),
-    sa.Column('password', sa.String(), nullable=False),
+    sa.Column('phone', sa.String(length=20), nullable=True),
+    sa.Column('email', sa.String(length=200), nullable=True),
+    sa.Column('password', sa.String(), nullable=True),
     sa.Column('salt', sa.String(), nullable=True),
     sa.Column('status', sa.Boolean(), server_default='1', nullable=False),
     sa.Column('is_multi_login', sa.Boolean(), server_default='1', nullable=False),
@@ -110,7 +110,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
     op.create_index(op.f('ix_user_id'), 'user', ['id'], unique=False)
     op.create_index(op.f('ix_user_lastname'), 'user', ['lastname'], unique=False)
-    op.create_index(op.f('ix_user_phone'), 'user', ['phone'], unique=False)
+    op.create_index(op.f('ix_user_phone'), 'user', ['phone'], unique=True)
     op.create_table('user_role',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False, comment='Primary Key ID'),
     sa.Column('user_id', sa.Integer(), nullable=True),

@@ -25,6 +25,41 @@ services:
     networks:
       - shaapi
 
+  # Next.js frontend (client/). The browser only talks to this origin: it
+  # proxies /admin/api/v1/* to the API over the internal network
+  # (API_INTERNAL_URL, read at runtime), so the refresh cookie stays first-party.
+  web:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    image: shaapi-web:latest
+    container_name: shaapi_web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - API_INTERNAL_URL=http://shaapi_api:8000
+    depends_on:
+      - api
+    networks:
+      - shaapi
+
+  # WhatsApp gateway (GOWA, go-whatsapp-web-multidevice) - opt-in.
+  # Enable it with COMPOSE_PROFILES=whatsapp and GOWA_URL=http://shaapi_gowa:3000
+  # in .env, then pair the *system* WhatsApp number by scanning the QR code at
+  # http://localhost:3002 (login: GOWA_BASIC_USER / GOWA_BASIC_PASS).
+  # Without it (dev), the OTP code is printed in the api logs.
+  gowa:
+    image: aldinokemal2104/go-whatsapp-web-multidevice:latest
+    container_name: shaapi_gowa
+    profiles: ["whatsapp"]
+    restart: unless-stopped
+    command: ["rest", "--port=3000", "--basic-auth=${GOWA_BASIC_USER:-admin}:${GOWA_BASIC_PASS:-change-me}"]
+    volumes:
+      - shaapi_gowa:/app/storages
+    networks:
+      - shaapi
+
   postgres:
     image: postgres:16-alpine
     container_name: shaapi_postgres
@@ -79,6 +114,7 @@ volumes:
   shaapi_postgres:
   shaapi_redis:
   shaapi_minio:
+  shaapi_gowa:
 
 networks:
   shaapi:

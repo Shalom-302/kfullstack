@@ -23,7 +23,7 @@ class OpsError(RuntimeError):
 
 # Secrets that must be replaced before a production boot (see the conf.py guard).
 _SECRET_KEYS = ("TOKEN_SECRET_KEY", "OPERA_LOG_ENCRYPT_SECRET_KEY",
-                "POSTGRES_PASSWORD", "MINIO_SECRET_KEY")
+                "POSTGRES_PASSWORD", "MINIO_SECRET_KEY", "GOWA_BASIC_PASS")
 
 
 def _require_root(path: Path | str) -> Path:
@@ -43,6 +43,7 @@ def generate_secrets() -> dict[str, str]:
         "OPERA_LOG_ENCRYPT_SECRET_KEY": os.urandom(32).hex(),
         "POSTGRES_PASSWORD": _secrets.token_urlsafe(24),
         "MINIO_SECRET_KEY": _secrets.token_urlsafe(24),
+        "GOWA_BASIC_PASS": _secrets.token_urlsafe(24),
     }
 
 

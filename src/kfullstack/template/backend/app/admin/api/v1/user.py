@@ -10,7 +10,9 @@ from backend.app.admin.service.user_service import user_service
 from backend.common.response.response_schema import ResponseModel, response_base
 from backend.common.security.jwt import DependsJwtAuth
 
-router = APIRouter(prefix="/user", tags=["User"])
+from backend.common.security.permissions import DependsAdmin
+
+router = APIRouter(prefix="/user", tags=["User"], dependencies=[DependsAdmin])
 
 
 

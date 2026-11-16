@@ -74,7 +74,9 @@ class GatewayError(BaseExceptionMixin):
 
 
 class AuthorizationError(BaseExceptionMixin):
-    code = StandardResponseCode.HTTP_401
+    # 403: authenticated but not allowed. 401 is reserved for TokenError
+    # (missing/expired token), which clients answer with a token refresh.
+    code = StandardResponseCode.HTTP_403
 
     def __init__(self, *, msg: str = 'Permission Denied', data: Any = None, background: BackgroundTask | None = None):
         super().__init__(msg=msg, data=data, background=background)

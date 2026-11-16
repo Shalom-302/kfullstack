@@ -9,7 +9,9 @@ from backend.app.admin.service.role_service import role_service
 from backend.common.response.response_schema import ResponseModel, response_base
 from backend.common.security.jwt import DependsJwtAuth
 
-router = APIRouter(prefix="/role", tags=["Role"])
+from backend.common.security.permissions import DependsAdmin
+
+router = APIRouter(prefix="/role", tags=["Role"], dependencies=[DependsAdmin])
 
 
 @router.get("/all", summary="Get all roles", dependencies=[DependsJwtAuth])
@@ -49,11 +51,10 @@ async def get_pagination_roles(
     request: Request,
     db: CurrentSession,
     name: Annotated[str | None, Query()] = None,
-    data_scope: Annotated[int | None, Query()] = None,
     status: Annotated[int | None, Query()] = None,
 ) -> ResponseModel:
     role_select = await role_service.get_select(
-        name=name, data_scope=data_scope, status=status
+        name=name, status=status
     )
     page_data = await paging_data(db, role_select, GetRoleListDetails)
     return response_base.success(request=request, data=page_data)

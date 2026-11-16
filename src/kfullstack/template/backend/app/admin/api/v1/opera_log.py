@@ -10,7 +10,9 @@ from backend.common.security.jwt import DependsJwtAuth
 from backend.common.security.rbac import DependsRBAC
 from backend.database.db_postgres import CurrentSession
 
-router = APIRouter(prefix="/opera_log", tags=["Operation Log"])
+from backend.common.security.permissions import DependsAdmin
+
+router = APIRouter(prefix="/opera_log", tags=["Operation Log"], dependencies=[DependsAdmin])
 
 
 @router.get(

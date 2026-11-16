@@ -97,12 +97,16 @@ class CRUDUser(CRUDBase[User]):
         new_admin = self.model(**dict_obj)
         await db.add(db, new_admin)
 
-    async def add(self, db: AsyncSession, obj: UserRegister) -> User:
+    async def add(self, db: AsyncSession, obj: UserRegister, role_name: str = Role_enum.USER.value) -> User:
         """
-        Add admin
+        Create a user with an email + password.
+
+        New accounts get the ``user`` role by default; only trusted code paths
+        (e.g. ``create-admin``) pass ``role_name='admin'``.
 
         :param db:
         :param obj:
+        :param role_name: role attached to the new user (created if missing)
         :return:
         """
         salt = text_captcha(5)
@@ -115,16 +119,29 @@ class CRUDUser(CRUDBase[User]):
         new_admin = self.model(**dict_obj)
 
         
-        role = await role_dao.get_by_name(db, Role_enum.ADMIN.value)
-        
-        role_list = []
-        if role is not None:
-            role_list.append(role)
-        new_admin.roles.extend(role_list)
+        role = await role_dao.get_or_create(db, role_name)
+        new_admin.roles.append(role)
         db.add(new_admin)
         await db.flush()
         await db.refresh(new_admin)
         return new_admin
+
+    async def add_by_phone(self, db: AsyncSession, phone: str, role_name: str = Role_enum.USER.value) -> User:
+        """Create a passwordless account identified by its (normalized) phone."""
+        user = self.model()
+        user.phone = phone
+        user.roles.append(await role_dao.get_or_create(db, role_name))
+        db.add(user)
+        await db.flush()
+        await db.refresh(user)
+        return user
+
+    async def grant_role(self, db: AsyncSession, user: User, role_name: str) -> None:
+        """Attach *role_name* to *user* (idempotent)."""
+        if any(r.name == role_name for r in user.roles):
+            return
+        user.roles.append(await role_dao.get_or_create(db, role_name))
+        await db.flush()
 
     async def update_admin_info(self, db: AsyncSession, input_admin: int, obj: UserUpdate) -> int:
         """

@@ -80,8 +80,6 @@ class User_job_status(Enum):
 class Role(Enum):
     USER = "user"
     ADMIN = "admin"
-    MENTOR = "mentor"
-    COMPANY = "company"
 
 class Appointment_status(Enum):
     WAITING_FOR_PAYMENT = "waiting_for_payment"

@@ -41,13 +41,19 @@ class UpdateUserParam(SchemaBase):
     phone: str | None = None
 
 
+class UpdateMeParam(SchemaBase):
+    """Fields a user may change on its own profile."""
+    firstname: str | None = Field(default=None, max_length=80)
+    lastname: str | None = Field(default=None, max_length=80)
+
+
 class UserResetPassword(SchemaBase):
     new_password: str
     confirm_password: str
 
 
 class UserInfoSchemaBase(UserBase):
-    email: EmailStr
+    email: EmailStr | None = None
 
 
 

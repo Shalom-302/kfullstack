@@ -43,7 +43,7 @@ for _stream in (sys.stdout, sys.stderr):
 app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
-    help="kfullstack - scaffold and run lean, batteries-included FastAPI backends.",
+    help="kfullstack - scaffold and run fullstack apps (FastAPI + Next.js, WhatsApp OTP auth).",
 )
 db_app = typer.Typer(no_args_is_help=True, help="Database & migrations (Alembic).")
 auth_app = typer.Typer(no_args_is_help=True, help="Authentication bootstrap.")
@@ -129,8 +129,10 @@ def _create_project(
             f"  cd {dest.name}\n"
             f"  {up_cmd}              # build + start the stack\n"
             f"  kfullstack db apply       # run migrations\n"
-            f"  kfullstack auth init      # create an admin to log into Swagger\n\n"
-            f"Then open [cyan]http://localhost:8000/admin/api/v1/docs[/]\n"
+            f"  kfullstack auth init --phone +33612345678   # or --email/--password\n\n"
+            f"Web app  [cyan]http://localhost:3000[/]  (admin space: /admin)\n"
+            f"Swagger  [cyan]http://localhost:8000/admin/api/v1/docs[/]\n"
+            f"[dim]WhatsApp codes are printed by `kfullstack logs api` until GOWA is set up.[/]\n"
             f"[dim](Need production config later? Run `kfullstack ops harden`.)[/]"
         )
     console.print(Panel.fit(body, title="Done", border_style="cyan"))
@@ -219,9 +221,24 @@ def db_shell(path: Path = _PATH_OPTION) -> None:
 def auth_init(
     email: Optional[str] = typer.Option(None, "--email", "-e", help="Admin email (login)."),
     password: Optional[str] = typer.Option(None, "--password", "-w", help="Admin password."),
+    phone: Optional[str] = typer.Option(
+        None, "--phone", help="Admin WhatsApp number, international form (+33...). Passwordless."
+    ),
     path: Path = _PATH_OPTION,
 ) -> None:
-    """Create an admin user so you can log into Swagger. Runs in the api container."""
+    """Create an administrator (email + password, or a WhatsApp number). Runs in the api container."""
+    if phone:
+        _docker(docker_ops.create_admin_phone, phone, path)
+        console.print(
+            Panel.fit(
+                f"[green][OK][/] Admin ready: [bold]{phone}[/]\n\n"
+                f"Log in with WhatsApp at [cyan]http://localhost:3000/auth/login[/]\n"
+                f"[dim](dev without GOWA: the code is in `kfullstack logs api`)[/]",
+                title="kfullstack auth init",
+                border_style="cyan",
+            )
+        )
+        return
     if not email:
         email = typer.prompt("Admin email")
     if not password:
@@ -231,7 +248,8 @@ def auth_init(
     console.print(
         Panel.fit(
             f"[green][OK][/] Admin ready: [bold]{email}[/]\n\n"
-            f"Log in at [cyan]http://localhost:8000/admin/api/v1/docs[/]",
+            f"Web app: [cyan]http://localhost:3000/auth/login[/]\n"
+            f"Swagger: [cyan]http://localhost:8000/admin/api/v1/docs[/]",
             title="kfullstack auth init",
             border_style="cyan",
         )
@@ -389,7 +407,7 @@ def up_command(
     """Build and start the whole stack (dev: hot-reload)."""
     _docker(docker_ops.up, path, monitoring=monitoring, prod=prod)
     console.print(
-        "[green][OK][/] API: [cyan]http://localhost:8000[/]  |  "
+        "[green][OK][/] Web: [cyan]http://localhost:3000[/]  |  API: [cyan]http://localhost:8000[/]  |  "
         "Swagger: [cyan]http://localhost:8000/admin/api/v1/docs[/]\n"
         "Next: [bold]kfullstack db apply[/] then [bold]kfullstack auth init[/]."
     )

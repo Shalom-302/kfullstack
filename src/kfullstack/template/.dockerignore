@@ -1,7 +1,6 @@
 # Version control
 .git
 .gitignore
-.gitlab-ci.yml
 
 # Python
 __pycache__/
@@ -35,3 +34,9 @@ node_modules/
 .github/
 docs/
 README.md
+
+# Frontend has its own image (client/Dockerfile)
+client/
+# Compose / deploy files
+docker-compose*.yml
+compose.image.yml

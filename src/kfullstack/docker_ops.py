@@ -111,7 +111,7 @@ def _compose_files(root: Path, *, monitoring: bool, prod: bool) -> list[str]:
         if not mon.exists():
             raise DockerError(
                 "This project was generated without monitoring. Re-create it with "
-                "`kfullstack create project <name> --monitoring`."
+                "`kfullstack new <name> --monitoring`."
             )
         files += ["-f", str(mon)]
     return files
@@ -232,6 +232,12 @@ def create_admin(email: str, password: str, path: Path | str = ".") -> None:
          "create-admin", "--email", email, "--password", password],
         path,
     )
+
+
+def create_admin_phone(phone: str, path: Path | str = ".") -> None:
+    """Grant the admin role to a WhatsApp number (``backend.cli create-admin --phone``)."""
+    _require_running(path, "api")
+    _run(["exec", "api", "python", "-m", "backend.cli", "create-admin", "--phone", phone], path)
 
 
 def storage_init(path: Path | str = ".") -> None:

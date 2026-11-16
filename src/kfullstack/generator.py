@@ -20,13 +20,16 @@ PROD_TEMPLATE_DIR = Path(__file__).resolve().parent / "prod_template"
 _EXCLUDE_NAMES = {
     "__pycache__", ".venv", "venv", ".git", ".pytest_cache", ".ruff_cache",
     ".mypy_cache", "node_modules", ".env", ".DS_Store",
+    # Next.js / frontend build artifacts
+    ".next", "out", ".turbo", ".vercel", "next-env.d.ts", "tsconfig.tsbuildinfo",
 }
 # Suffixes never copied at all (local dev artifacts).
 _SKIP_SUFFIXES = {".pyc", ".pyo", ".db", ".sqlite3", ".log"}
 # Binary files: copied verbatim, never text-substituted.
 _BINARY_SUFFIXES = {
     ".png", ".jpg", ".jpeg", ".gif", ".ico", ".xdb",
-    ".woff", ".woff2", ".ttf", ".pdf", ".zip", ".gz",
+    ".woff", ".woff2", ".ttf", ".otf", ".eot", ".pdf", ".zip", ".gz",
+    ".webp", ".avif", ".bmp", ".mp4", ".webm", ".mp3", ".wav",
 }
 
 

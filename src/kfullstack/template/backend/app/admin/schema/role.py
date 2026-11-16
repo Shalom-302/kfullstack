@@ -2,15 +2,12 @@ from datetime import datetime
 
 from pydantic import ConfigDict, Field
 
-from backend.common.enums import RoleDataScopeType, StatusType
+from backend.common.enums import StatusType
 from backend.common.schema import SchemaBase
 
 
 class RoleSchemaBase(SchemaBase):
     name: str
-    data_scope: RoleDataScopeType = Field(
-        default=RoleDataScopeType.custom, description='Permission ranges (1: all data permissions 2: custom data permissions)'
-    )
     status: StatusType = Field(default=StatusType.enable)
     remark: str | None = None
 

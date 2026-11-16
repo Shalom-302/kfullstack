@@ -12,7 +12,7 @@ class RedisCli(Redis):
         super(RedisCli, self).__init__(
             host=settings.REDIS_HOST,
             port=settings.REDIS_PORT,
-            # password=settings.REDIS_PASSWORD,
+            password=settings.REDIS_PASSWORD or None,
             db=settings.REDIS_DATABASE,
             socket_timeout=settings.REDIS_TIMEOUT,
             decode_responses=True,   # Transcoding utf-8
